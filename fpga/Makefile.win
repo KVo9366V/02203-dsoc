@@ -1,0 +1,49 @@
+########################################
+# FPGA makefile - Windows
+# Vivado runs natively; SW compilation delegated to WSL.
+# flist.f / flist_bscane.f / includes.txt are committed (Linux-generated,
+# relative paths) and work with Windows Vivado as-is.
+########################################
+
+SHELL  = cmd
+WSL    = wsl
+VIVADO ?= vivado
+
+export TEST   ?= blink
+export BUILD_DIR ?= $(CURDIR)/../build
+export PROJECT   ?= nexys_a7
+# Accelerator language (sv | vhdl), read by scripts/run_xilinx.tcl
+export ACC_LANG  ?= sv
+
+check_env:
+	if not exist "$(BUILD_DIR)" mkdir "$(BUILD_DIR)"
+
+all_xilinx: check_env
+	$(VIVADO) -mode batch -notrace -source scripts\run_xilinx.tcl
+
+all_xilinx_gui: check_env
+	start $(VIVADO) -mode gui -source scripts\run_xilinx.tcl
+
+# SW compiled inside WSL
+build_test: check_env
+	$(WSL) make -C $(shell $(WSL) wslpath '$(CURDIR)')/sw \
+		BUILD_DIR=$(shell $(WSL) wslpath '$(BUILD_DIR)')/fpga \
+		TESTCASE=$(TEST) \
+		test
+
+# # Attach Nexys A7 USB to WSL2 (once per Windows session; usbipd bind must have
+# # been run as admin once before this will work).
+# usbipd_attach:
+# 	usbipd attach --wsl --hardware-id 0403:6010
+
+# # Use this target to dettach before programing Bitstream
+# usbipd_detach:
+# 	usbipd detach --hardware-id 0403:6010
+
+# # Run OpenOCD inside WSL (blocking - open a second terminal for load_elf).
+# start_openocd:
+# 	$(WSL) sudo openocd -d2 -f $(shell $(WSL) wslpath '$(CURDIR)')/utils/openocd-didactic-nexys.cfg
+
+# load_elf: check_env
+# 	$(WSL) gdb-multiarch $(shell $(WSL) wslpath '$(BUILD_DIR)')/fpga/sw/$(TEST).elf \
+# 		-x $(shell $(WSL) wslpath '$(CURDIR)')/utils/connect-and-load.gdb
