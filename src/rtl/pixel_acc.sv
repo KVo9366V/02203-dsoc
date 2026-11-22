@@ -1,24 +1,26 @@
 // ============================================================
-//  pixel_acc - pipelined Sobel edge detector (line-buffer version)
+//  pixel_acc - STUDENT MODULE
 //
-//  Throughput: ~1 output word per clock cycle
-//  (about (H+1)*(W+1) = 289*89 = 25.7k cycles per frame)
+//  You are given direct read access to ibuf and write access
+//  to obuf. Both are synchronous BRAMs with 1-cycle read latency.
 //
-//  Pipeline (one "beat" per clock, tagged with its position):
+//  Interface:
+//    start  - pulsed high for 1 cycle to begin processing
+//    finish - assert high for 1 cycle when all output words
+//             have been written to obuf
 //
-//    ISSUE -> s1 (addr regs) -> A (data + line buffers)
-//          -> B (window regs) -> C (dx/dy regs) -> D (obuf regs)
+//  ibuf read port:
+//    Set ibuf_rd_en=1 and ibuf_rd_addr to the word you want.
+//    ibuf_rd_data is valid on the NEXT clock cycle.
 //
-//  The input is read strictly in raster order, ONE word per beat.
-//  Two line buffers hold the previous two rows, so the 3-row
-//  window is built from: lb1 (row y-2), lb0 (row y-1), input (row y).
-//  When row y arrives, output row y-1 is computed.
+//  obuf write port:
+//    Set obuf_wr_en=1, obuf_wr_addr, obuf_wr_data on the same cycle.
+//    The word is written on the rising edge.
 //
-//  Each row phase has IMG_WIDTH+1 beats: IMG_WIDTH real words plus
-//  one flush beat (no read) so that the last column of the row can
-//  be computed before the next row's first word shifts in.
-//  There are IMG_HEIGHT+1 row phases: phase 0 only fills lb0,
-//  phase IMG_HEIGHT has no reads (bottom border replication).
+//  Parameters:
+//    BUF_AW    - address width (ibuf/obuf have 2^BUF_AW words)
+//    BUF_DEPTH - total number of words in each buffer
+//    IMG_WIDTH - frame width in words (= pixels per row / 4)
 // ============================================================
 module pixel_acc #(
     parameter int BUF_AW    = 15,
