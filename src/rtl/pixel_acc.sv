@@ -64,7 +64,7 @@ module pixel_acc #(
 	end
 
     // ---------------- tags travelling with the data ----------------
-    logic              s1_v;           // beat tag, aligned with ibuf_rd_addr
+    logic              s1_v;           // cycle tag, aligned with ibuf_rd_addr
     logic [CNTW-1:0]   s1_col;
     logic [ROWW-1:0]   s1_row;
 
